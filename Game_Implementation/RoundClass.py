@@ -11,8 +11,8 @@ class Round:
         self.game_type = None  # Rufspiel-Eichel, Rufspiel-Blatt, Rufspiel-Herz, Rufspiel-Schelle, Solo-Eichel, Solo-Blatt, Solo-Herz, Solo-Schelle, Wenz
         self.trumps_in_order = []
         self.klopfen_players = []
-        self.kontra_players = []
-        self.re_players = []
+        self.kontra_player = None
+        self.re_player = False
         self.round_scores = {player.name: 0 for player in players}
         self.tricks_per_player = {player.name: [] for player in players}
         self.current_trick = []
@@ -26,11 +26,11 @@ class Round:
 
     def set_kontra(self, player):
         if player.kontra():
-            self.kontra_players.append(player)
+            self.kontra_player = player
 
     def set_re(self, player):
         if player.re():
-            self.re_players.append(player)
+            self.re = True
 
     def set_game_type(self, player, game_type):
         self.game_type = (player.name, game_type)
@@ -45,11 +45,6 @@ class Round:
                 [Card(suit, 'Ober') for suit in Card.SUITS]
         elif self.game_type[1] == 'Wenz':
             self.trumps_in_order = [Card(suit, 'Unter') for suit in Card.SUITS]
-
-    def deal(self):
-        self.deck.shuffle()
-        for player in self.players:
-            player.receive_cards(self.deck.deal())
 
     def determine_trick_winner(self):
         if len(self.current_trick) < 4:
@@ -108,68 +103,65 @@ class Round:
         # In order to start pre-round loops with start_player
         players_in_order = self.players[self.start_player_index:] + self.players[:self.start_player_index]
 
-        # Pre-round decisions
-        for player in players_in_order:
-            self.set_klopfen(player)
+        # Shuffle deck
+        self.deck.shuffle()
 
+        # Klopfen and Deal
         for player in players_in_order:
-            game_type = player.decide_game_type()
+            player.receive_cards(self.deck.deal4)
+            self.set_klopfen(player)
+            player.receive_cards(self.deck.deal4)
+
+        # Game type decision
+        position = 1
+        for player in players_in_order:
+            game_type = player.decide_game_type(position)
+            position += 1
             if game_type is not 'Passen':
                 self.set_game_type(player, game_type)
                 self.play_caller = player
                 break
 
+        # Kontra and Re
         match game_type:
             case 'Rufspiel-Eichel':
                 for player in players_in_order:
-                    if player != self.play_caller and Card('Eichel', 'Ass') not in player.hand:
+                    if not self.kontra_player and player != self.play_caller and Card('Eichel', 'Ass') not in player.hand:
                         self.set_kontra(player)
 
-                if self.kontra_players:
-                    for player in players_in_order:
-                        if player != self.play_caller and Card('Eichel', 'Ass') not in player.hand:
-                            continue
-                        self.set_re(player)
+                if self.kontra_player:
+                    self.set_re(self.play_caller)
 
             case 'Rufspiel-Blatt':
                 for player in players_in_order:
-                    if player != self.play_caller and Card('Blatt', 'Ass') not in player.hand:
+                    if not self.kontra_player and player != self.play_caller and Card('Blatt', 'Ass') not in player.hand:
                         self.set_kontra(player)
 
-                if self.kontra_players:
-                    for player in players_in_order:
-                        if player != self.play_caller and Card('Blatt', 'Ass') not in player.hand:
-                            continue
-                        self.set_re(player)
+                if self.kontra_player:
+                    self.set_re(self.play_caller)
 
             case 'Rufspiel-Herz':
                 for player in players_in_order:
-                    if player != self.play_caller and Card('Herz', 'Ass') not in player.hand:
+                    if not self.kontra_player and player != self.play_caller and Card('Herz', 'Ass') not in player.hand:
                         self.set_kontra(player)
 
-                if self.kontra_players:
-                    for player in players_in_order:
-                        if player != self.play_caller and Card('Herz', 'Ass') not in player.hand:
-                            continue
-                        self.set_re(player)
+                if self.kontra_player:
+                    self.set_re(self.play_caller)
 
             case 'Rufspiel-Schelle':
                 for player in players_in_order:
-                    if player != self.play_caller and Card('Schelle', 'Ass') not in player.hand:
+                    if not self.kontra_player and player != self.play_caller and Card('Schelle', 'Ass') not in player.hand:
                         self.set_kontra(player)
 
-                if self.kontra_players:
-                    for player in players_in_order:
-                        if player != self.play_caller and Card('Schelle', 'Ass') not in player.hand:
-                            continue
-                        self.set_re(player)
+                if self.kontra_player:
+                    self.set_re(self.play_caller)
 
             case 'Solo-Eichel' | 'Solo-Blatt' | 'Solo-Herz' | 'Solo-Schelle' | 'Wenz':
                 for player in players_in_order:
-                    if player != self.play_caller:
+                    if not self.kontra_player and player != self.play_caller:
                         self.set_kontra(player)
 
-                if self.kontra_players:
+                if self.kontra_player:
                     self.set_re(self.play_caller)
 
         # Play tricks
@@ -183,3 +175,5 @@ class Round:
                 for card in quadruple:
                     total_points += card.value
             self.round_scores[player] = total_points
+
+        return self.round_scores

@@ -1,4 +1,5 @@
 import random
+from CardClass import Card
 
 
 class Player:
@@ -31,12 +32,18 @@ class Player:
         return re_choice
 
     def decide_game_type(self, position):
+        # Possible game types per Hand
+        possible_game_types = ['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz',
+                               'Rufspiel-Schelle', 'Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz']
+        for suit in Card.SUITS:
+            if Card(suit, 'Ass') in self.hand:
+                possible_game_types.remove(f'Rufspiel-{suit}')
+
+        # Decide what game to play
         if position < 4:
-            game_type_choice = random.choice([random.choice(['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz', 'Rufspiel-Schelle',
-                                                             'Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz']), 'Passen'])
+            game_type_choice = random.choice([random.choice(possible_game_types), 'Passen'])
         else:
-            game_type_choice = random.choice(['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz', 'Rufspiel-Schelle',
-                                              'Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz'])
+            game_type_choice = random.choice(possible_game_types)
         return game_type_choice
 
     def __str__(self):

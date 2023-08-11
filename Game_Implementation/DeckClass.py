@@ -10,9 +10,9 @@ class Deck:
     def shuffle(self):
         np.random.shuffle(self.cards)
 
-    def deal(self):
-        dealt_cards = self.cards[:8]
-        self.cards = self.cards[8:]
+    def deal4(self):
+        dealt_cards = self.cards[:4]
+        self.cards = self.cards[4:]
         return dealt_cards
 
     def __str__(self):
