@@ -8,17 +8,24 @@ class Round:
         self.players = players
 
         self.deck = Deck()
-        self.game_type = None  # Rufspiel-Eichel, Rufspiel-Blatt, Rufspiel-Herz, Rufspiel-Schelle, Solo-Eichel, Solo-Blatt, Solo-Herz, Solo-Schelle, Wenz
+        self.game_type = ''  # Rufspiel-Eichel, Rufspiel-Blatt, Rufspiel-Herz, Rufspiel-Schelle, Solo-Eichel, Solo-Blatt, Solo-Herz, Solo-Schelle, Wenz
         self.trumps_in_order = []
         self.klopfen_players = []
         self.kontra_player = None
-        self.re_player = False
+        self.re = False
+        self.tout = False
+        self.laufende = 0
         self.round_scores = {player.name: 0 for player in players}
+        self.nonPlaying_team_score = 0
+        self.playing_team_score = 0
         self.tricks_per_player = {player.name: [] for player in players}
         self.current_trick = []
         self.current_trick_number = 0
         self.current_player_index = start_player_index  # 0 --> Player 1, 1 --> Player 2, 2 --> Player 3 etc.
         self.play_caller = None
+        self.playing_players = []
+        self.nonPlaying_players = []
+        self.starting_hand = {player.name: [] for player in players}
 
     def set_klopfen(self, player):
         if player.klopfen():
@@ -32,18 +39,21 @@ class Round:
         if player.re():
             self.re = True
 
-    def set_game_type(self, player, game_type):
-        self.game_type = (player.name, game_type)
+    def set_tout(self, player):
+        if player.tout():
+            self.tout = True
 
-        if self.game_type[1] in ['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz', 'Rufspiel-Schelle']:
+    def set_trumps(self, game_type):
+
+        if game_type in ['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz', 'Rufspiel-Schelle']:
             self.trumps_in_order = [Card(suit, 'Unter') for suit in Card.SUITS] + \
                 [Card(suit, 'Ober') for suit in Card.SUITS]
-        elif self.game_type[1] in ['Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle']:
-            solo_suit = self.game_type[1].split('-')[1]
+        elif game_type in ['Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle']:
+            solo_suit = game_type.split('-')[1]
             self.trumps_in_order = [Card(solo_suit, rank) for rank in Card.RANKS if rank not in ['Ober', 'Unter']] + \
                 [Card(suit, 'Unter') for suit in Card.SUITS] + \
                 [Card(suit, 'Ober') for suit in Card.SUITS]
-        elif self.game_type[1] == 'Wenz':
+        elif game_type == 'Wenz':
             self.trumps_in_order = [Card(suit, 'Unter') for suit in Card.SUITS]
 
     def determine_trick_winner(self):
@@ -54,7 +64,7 @@ class Round:
         leading_suit = self.current_trick[0][1].suit
         highest_card = self.current_trick[0][1]
         winning_player = self.current_trick[0][0]
-        trick_won = (self.current_trick[0][1], None, None, None)
+        trick_won = [self.current_trick[0][1], None, None, None]
 
         index = 0
         for player, card in self.current_trick[1:]:
@@ -101,68 +111,85 @@ class Round:
     def play_round(self):
 
         # In order to start pre-round loops with start_player
-        players_in_order = self.players[self.start_player_index:] + self.players[:self.start_player_index]
+        players_in_order = self.players[self.current_player_index:] + self.players[:self.current_player_index]
 
         # Shuffle deck
         self.deck.shuffle()
 
         # Klopfen and Deal
         for player in players_in_order:
-            player.receive_cards(self.deck.deal4)
+            player.receive_cards(self.deck.deal4())
             self.set_klopfen(player)
-            player.receive_cards(self.deck.deal4)
+            player.receive_cards(self.deck.deal4())
+
+        # Save starting hand
+        for player in self.players:
+            self.starting_hand[player.name] = player.hand.copy()
 
         # Game type decision
         position = 1
         for player in players_in_order:
             game_type = player.decide_game_type(position)
             position += 1
-            if game_type is not 'Passen':
-                self.set_game_type(player, game_type)
+            if game_type != 'Passen':
+                self.game_type = game_type
+                self.set_trumps(game_type)
                 self.play_caller = player
                 break
 
-        # Kontra and Re
-        match game_type:
-            case 'Rufspiel-Eichel':
-                for player in players_in_order:
-                    if not self.kontra_player and player != self.play_caller and Card('Eichel', 'Ass') not in player.hand:
-                        self.set_kontra(player)
+        # Tout
+        if self.game_type in ('Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz'):
+            self.set_tout(self.play_caller)
 
-                if self.kontra_player:
-                    self.set_re(self.play_caller)
-
-            case 'Rufspiel-Blatt':
-                for player in players_in_order:
-                    if not self.kontra_player and player != self.play_caller and Card('Blatt', 'Ass') not in player.hand:
-                        self.set_kontra(player)
-
-                if self.kontra_player:
-                    self.set_re(self.play_caller)
-
-            case 'Rufspiel-Herz':
-                for player in players_in_order:
-                    if not self.kontra_player and player != self.play_caller and Card('Herz', 'Ass') not in player.hand:
-                        self.set_kontra(player)
-
-                if self.kontra_player:
-                    self.set_re(self.play_caller)
-
-            case 'Rufspiel-Schelle':
-                for player in players_in_order:
-                    if not self.kontra_player and player != self.play_caller and Card('Schelle', 'Ass') not in player.hand:
-                        self.set_kontra(player)
-
-                if self.kontra_player:
-                    self.set_re(self.play_caller)
+        # Make teams
+        match self.game_type:
+            case 'Rufspiel-Eichel' | 'Rufspiel-Blatt' | 'Rufspiel-Herz' | 'Rufspiel-Schelle':
+                suit = self.game_type.split('-')[1]
+                for player in self.players:
+                    if player == self.play_caller or Card(suit, 'Ass') in player.hand:
+                        self.playing_players.append(player)
+                    else:
+                        self.nonPlaying_players.append(player)
 
             case 'Solo-Eichel' | 'Solo-Blatt' | 'Solo-Herz' | 'Solo-Schelle' | 'Wenz':
-                for player in players_in_order:
-                    if not self.kontra_player and player != self.play_caller:
-                        self.set_kontra(player)
+                for player in self.players:
+                    if player == self.play_caller:
+                        self.playing_players.append(self.play_caller)
+                    else:
+                        self.nonPlaying_players.append(player)
 
-                if self.kontra_player:
-                    self.set_re(self.play_caller)
+        # Kontra and Re
+        for player in self.nonPlaying_players:
+            if not self.kontra_player:
+                self.set_kontra(player)
+
+        if self.kontra_player:
+            self.set_re(self.play_caller)
+
+        # Save laufende
+        playing_players_cards = []
+        nonPlaying_players_cards = []
+        for player in self.playing_players:
+            playing_players_cards.extend(player.hand)
+        for player in self.nonPlaying_players:
+            nonPlaying_players_cards.extend(player.hand)
+
+        if self.trumps_in_order[-1] in playing_players_cards:
+            hand_to_check = playing_players_cards
+        else:
+            hand_to_check = nonPlaying_players_cards
+
+        count = 0
+        for card in reversed(self.trumps_in_order):
+            if card in hand_to_check:
+                count += 1
+            else:
+                break
+
+        if count >= 3 and self.game_type != 'Wenz':
+            self.laufende = count
+        elif self.game_type == 'Wenz' and count >= 2:
+            self.laufende = count
 
         # Play tricks
         while self.current_trick_number < 8:
@@ -176,4 +203,5 @@ class Round:
                     total_points += card.value
             self.round_scores[player] = total_points
 
-        return self.round_scores
+        self.playing_team_score = sum(self.round_scores[player.name] for player in self.playing_players)
+        self.nonPlaying_team_score = sum(self.round_scores[player.name] for player in self.nonPlaying_players)

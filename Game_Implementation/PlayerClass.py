@@ -14,22 +14,28 @@ class Player:
     def play_card(self):
         # AI plays card (for now random card from hand)
         card = random.choice(self.hand)
-        return self.hand.pop(card)
+        self.hand.remove(card)
+        return card
 
     def klopfen(self):
         # Decide whether to klopfen (for now klopfen half the time)
         klopfen_choice = random.choice([True, False])
         return klopfen_choice
 
-    def contra(self):
+    def kontra(self):
         # Decide whether to contra (for now contra half the time)
-        contra_choice = random.choice([True, False])
-        return contra_choice
+        kontra_choice = random.choice([True, False])
+        return kontra_choice
 
     def re(self):
         # Decide whether to contra (for now re half the time)
         re_choice = random.choice([True, False])
         return re_choice
+
+    def tout(self):
+        # Decide Tout on solo
+        tout_choice = random.choice([True, False, False, False, False, False])
+        return tout_choice
 
     def decide_game_type(self, position):
         # Possible game types per Hand
@@ -38,6 +44,10 @@ class Player:
         for suit in Card.SUITS:
             if Card(suit, 'Ass') in self.hand:
                 possible_game_types.remove(f'Rufspiel-{suit}')
+            else:
+                noTrump_ranks = [rank for rank in Card.RANKS if rank not in ['Ober', 'Unter']]
+                if all(Card(suit, rank) not in self.hand for rank in noTrump_ranks):
+                    possible_game_types.remove(f'Rufspiel-{suit}')
 
         # Decide what game to play
         if position < 4:
@@ -47,7 +57,7 @@ class Player:
         return game_type_choice
 
     def __str__(self):
-        return f"{self.name} has {len(self.hand)} cards"
+        return f"{self.name} ({len(self.hand)})"
 
     def __eq__(self, other):
         if isinstance(other, Player):
