@@ -25,7 +25,7 @@ print(f"The winner of the trick is: {winner.name}")
 print(f'The winner won {trick}')
 '''
 
-test_game = Game(1000)
+test_game = Game(1)
 
 test_game.play_game()
 

@@ -23,23 +23,26 @@ class Game:
         # Calc winners and points
         schneider = False
         schwarz = False
-        if self.current_round.playing_team_score <= 30 or self.current_round.nonPlaying_team_score <= 30:
+        tout = self.current_round.tout
+        if not tout and (self.current_round.playing_team_score <= 30 or self.current_round.nonPlaying_team_score <= 30):
             schneider = True
-        if self.current_round.playing_team_score == 0 or self.current_round.nonPlaying_team_score == 0:
+        if not tout and (self.current_round.playing_team_score == 0 or self.current_round.nonPlaying_team_score == 0):
             schwarz = True
         laufende = self.current_round.laufende
-        tout = self.current_round.tout
         klopfen = len(self.current_round.klopfen_players)
         kontra = True if self.current_round.kontra_player else False
         re = self.current_round.re
 
+        # Tarifs: Schneider/Laufende, Rufspiel, Solo
+        tarif = [10, 20, 50]
+
         tarif_operations_in_order = [
             # Schneider
-            {'condition': lambda: schneider, 'operation': lambda val: val + 10},
+            {'condition': lambda: schneider, 'operation': lambda val: val + tarif[0]},
             # Schwarz
-            {'condition': lambda: schwarz, 'operation': lambda val: val + 10},
+            {'condition': lambda: schwarz, 'operation': lambda val: val + tarif[0]},
             # Laufende
-            {'condition': lambda: laufende > 0, 'operation': lambda val: val + (laufende*10)},
+            {'condition': lambda: laufende > 0, 'operation': lambda val: val + (laufende*tarif[0])},
             # Klopfen
             {'condition': lambda: klopfen > 0, 'operation': lambda val: val * (2**klopfen)},
             # Kontra
@@ -51,12 +54,12 @@ class Game:
         ]
 
         if self.current_round.game_type in ('Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz'):
-            game_value = 50
+            game_value = tarif[2]
             for op in tarif_operations_in_order:
                 if op['condition']():
                     game_value = op['operation'](game_value)
 
-            if self.current_round.playing_team_score > 60:
+            if (not tout and self.current_round.playing_team_score > 60) or (tout and self.current_round.playing_team_score == 120):
                 self.scores[self.current_round.play_caller.name].append(game_value*3)
                 for player in self.current_round.nonPlaying_players:
                     self.scores[player.name].append(-game_value)
@@ -65,7 +68,7 @@ class Game:
                 for player in self.current_round.nonPlaying_players:
                     self.scores[player.name].append(game_value)
         else:
-            game_value = 20
+            game_value = tarif[1]
             for op in tarif_operations_in_order:
                 if op['condition']():
                     game_value = op['operation'](game_value)

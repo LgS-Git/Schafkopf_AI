@@ -95,7 +95,7 @@ class Round:
 
         for _ in range(4):
             player = self.players[self.current_player_index]
-            card = player.play_card()  # Player decides which card to play
+            card = player.play_card(self.game_type, self.current_trick)  # Player decides which card to play
             self.current_trick.append((player, card))
             self.current_player_index = (self.current_player_index + 1) % 4
 

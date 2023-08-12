@@ -11,9 +11,17 @@ class Player:
     def receive_cards(self, cards):
         self.hand.extend(cards)
 
-    def play_card(self):
-        # AI plays card (for now random card from hand)
-        card = random.choice(self.hand)
+    def play_card(self, game_type, current_trick):
+        if game_type in ['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz', 'Rufspiel-Schelle']:
+            suit = game_type.split('-')[1]
+            if len(current_trick) > 0 and current_trick[0][1].suit == suit and Card(suit, 'Ass') in self.hand:
+                card = Card(suit, 'Ass')
+            else:
+                # AI plays card (for now random card from hand)
+                card = random.choice(self.hand)
+        else:
+            # AI plays card (for now random card from hand)
+            card = random.choice(self.hand)
         self.hand.remove(card)
         return card
 
@@ -39,8 +47,8 @@ class Player:
 
     def decide_game_type(self, position):
         # Possible game types per Hand
-        possible_game_types = ['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz',
-                               'Rufspiel-Schelle', 'Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz']
+        possible_game_types = ['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz', 'Rufspiel-Schelle',
+                               'Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz']
         for suit in Card.SUITS:
             if Card(suit, 'Ass') in self.hand:
                 possible_game_types.remove(f'Rufspiel-{suit}')
