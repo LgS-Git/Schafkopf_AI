@@ -25,14 +25,14 @@ print(f"The winner of the trick is: {winner.name}")
 print(f'The winner won {trick}')
 '''
 
-test_game = Game(1)
+test_game = Game(1000)
 
 test_game.play_game()
 
 print(test_game.current_round.game_type)
 print(test_game.current_round.play_caller)
 print(test_game.current_round.starting_hand)
-# print(test_game.scores)
+print(len(test_game.scores['Player 1']))
 print(test_game.final_score)
 print(test_game.current_round.tricks_per_player)
 print(test_game.current_round.round_scores)

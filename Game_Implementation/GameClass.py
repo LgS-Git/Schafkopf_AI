@@ -57,13 +57,13 @@ class Game:
                     game_value = op['operation'](game_value)
 
             if self.current_round.playing_team_score > 60:
-                self.scores[self.current_round.play_caller.name].append(game_value)
+                self.scores[self.current_round.play_caller.name].append(game_value*3)
                 for player in self.current_round.nonPlaying_players:
-                    self.scores[player.name].append(-game_value/3)
+                    self.scores[player.name].append(-game_value)
             else:
-                self.scores[self.current_round.play_caller.name].append(-game_value)
+                self.scores[self.current_round.play_caller.name].append(-game_value*3)
                 for player in self.current_round.nonPlaying_players:
-                    self.scores[player.name].append(game_value/3)
+                    self.scores[player.name].append(game_value)
         else:
             game_value = 20
             for op in tarif_operations_in_order:
