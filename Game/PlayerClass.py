@@ -1,5 +1,5 @@
 import random
-from CardClass import Card
+from .CardClass import Card
 
 
 class Player:
@@ -12,6 +12,8 @@ class Player:
         self.hand.extend(cards)
 
     def play_card(self, game_type, current_trick):
+        if len(self.hand) == 1:
+            card = self.hand[0]
         if game_type in ['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz', 'Rufspiel-Schelle']:
             suit = game_type.split('-')[1]
             if len(current_trick) > 0 and current_trick[0][1].suit == suit and Card(suit, 'Ass') in self.hand:

@@ -1,0 +1,27 @@
+[NEAT]
+fitness_criterion     = max
+fitness_threshold     = 1
+pop_size              = 150
+reset_on_extinction   = False
+
+[DefaultGenome]
+# Assuming a certain number for inputs and outputs; adjust as needed
+num_inputs            = 100
+num_outputs           = 10
+activation_default    = sigmoid
+activation_mutate_rate = 0.0
+activation_options    = sigmoid
+
+# ... add other necessary configurations ...
+
+[DefaultSpeciesSet]
+compatibility_threshold = 3.0
+
+[DefaultStagnation]
+species_fitness_func   = max
+max_stagnation         = 20
+species_elitism        = 2
+
+[DefaultReproduction]
+elitism                = 2
+survival_threshold     = 0.2

@@ -1,10 +1,10 @@
-from DeckClass import Deck
-from CardClass import Card
+from .DeckClass import Deck
+from .CardClass import Card
 
 
 class Round:
 
-    def __init__(self, players, start_player_index):
+    def __init__(self, players, start_player_index, cumulative_score):
         self.players = players
 
         self.deck = Deck()
@@ -12,8 +12,8 @@ class Round:
         self.trumps_in_order = []
         self.klopfen_players = []
         self.kontra_player = None
-        self.re = False
-        self.tout = False
+        self.re_player = None
+        self.tout_player = None
         self.laufende = 0
         self.round_scores = {player.name: 0 for player in players}
         self.nonPlaying_team_score = 0
@@ -22,10 +22,12 @@ class Round:
         self.current_trick = []
         self.current_trick_number = 0
         self.current_player_index = start_player_index  # 0 --> Player 1, 1 --> Player 2, 2 --> Player 3 etc.
+        self.starting_player = players[start_player_index] # Always holds who plays/played the first card in a trick
         self.play_caller = None
         self.playing_players = []
         self.nonPlaying_players = []
         self.starting_hand = {player.name: [] for player in players}
+        self.current_game_score = cumulative_score
 
     def set_klopfen(self, player):
         if player.klopfen():
@@ -37,11 +39,11 @@ class Round:
 
     def set_re(self, player):
         if player.re():
-            self.re = True
+            self.re_player = player
 
     def set_tout(self, player):
         if player.tout():
-            self.tout = True
+            self.tout_player = player
 
     def set_trumps(self, game_type):
 
@@ -64,10 +66,8 @@ class Round:
         leading_suit = self.current_trick[0][1].suit
         highest_card = self.current_trick[0][1]
         winning_player = self.current_trick[0][0]
-        trick_won = [self.current_trick[0][1], None, None, None]
 
-        index = 0
-        for player, card in self.current_trick[1:]:
+        for playerName, card in self.current_trick[1:]:
             is_card_trump = card in self.trumps_in_order
             is_highest_card_trump = highest_card in self.trumps_in_order
             is_same_suit_as_leading = card.suit == leading_suit
@@ -75,19 +75,16 @@ class Round:
             if is_card_trump and is_highest_card_trump:
                 if self.trumps_in_order.index(card) > self.trumps_in_order.index(highest_card):
                     highest_card = card
-                    winning_player = player
+                    winning_player = playerName
             elif is_card_trump and not is_highest_card_trump:
                 highest_card = card
-                winning_player = player
+                winning_player = playerName
             elif is_same_suit_as_leading and not is_highest_card_trump:
                 if (Card.RANKS.index(card.rank) > Card.RANKS.index(highest_card.rank)):
                     highest_card = card
-                    winning_player = player
+                    winning_player = playerName
 
-            trick_won[index + 1] = card
-            index += 1
-
-        return winning_player, trick_won
+        return winning_player
 
     def play_trick(self):
 
@@ -96,17 +93,25 @@ class Round:
         for _ in range(4):
             player = self.players[self.current_player_index]
             card = player.play_card(self.game_type, self.current_trick)  # Player decides which card to play
-            self.current_trick.append((player, card))
+            self.current_trick.append((player.name, card))
             self.current_player_index = (self.current_player_index + 1) % 4
 
-        winning_player, trick_won = self.determine_trick_winner()
+        winning_player = self.determine_trick_winner()
 
-        self.tricks_per_player[winning_player.name].append(trick_won)
+        only_cards_of_current_trick = tuple([tuple[1] for tuple in self.current_trick])
+        self.tricks_per_player[winning_player].append(only_cards_of_current_trick)
 
-        # Reset the current trick
+        # Update round_scores
+        trick_value = 0
+        for _, card in self.current_trick:
+            trick_value += card.value
+        self.round_scores[winning_player] += trick_value
+
+        # Reset the current trick and player index
         self.current_trick = []
 
-        self.current_player_index = self.players.index(winning_player)
+        self.current_player_index = int(winning_player[-1]) - 1
+        self.starting_player = self.players[self.current_player_index]
 
     def play_round(self):
 
@@ -135,11 +140,10 @@ class Round:
                 self.game_type = game_type
                 self.set_trumps(game_type)
                 self.play_caller = player
+                # Tout
+                if self.game_type in ('Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz'):
+                    self.set_tout(self.play_caller)
                 break
-
-        # Tout
-        if self.game_type in ('Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz'):
-            self.set_tout(self.play_caller)
 
         # Make teams
         match self.game_type:
@@ -194,14 +198,6 @@ class Round:
         # Play tricks
         while self.current_trick_number < 8:
             self.play_trick()
-
-        # Calculate round points
-        for player, tricks in self.tricks_per_player.items():
-            total_points = 0
-            for quadruple in tricks:
-                for card in quadruple:
-                    total_points += card.value
-            self.round_scores[player] = total_points
 
         self.playing_team_score = sum(self.round_scores[player.name] for player in self.playing_players)
         self.nonPlaying_team_score = sum(self.round_scores[player.name] for player in self.nonPlaying_players)

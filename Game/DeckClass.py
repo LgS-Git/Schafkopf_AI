@@ -1,5 +1,5 @@
 import numpy as np
-from CardClass import Card
+from .CardClass import Card
 
 
 class Deck:

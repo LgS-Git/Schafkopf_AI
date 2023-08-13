@@ -1,5 +1,5 @@
-from PlayerClass import Player
-from RoundClass import Round
+from .PlayerClass import Player
+from .RoundClass import Round
 
 
 class Game:
@@ -9,21 +9,21 @@ class Game:
 
         self.players = [Player(f"Player {i + 1}") for i in range(4)]
         self.scores = {player.name: [] for player in self.players}
-        self.final_score = {player.name: 0 for player in self.players}
+        self.cumulative_score = {player.name: 0 for player in self.players}
         self.current_round = None
         self.current_round_number = 0
         self.round_storage = []
 
     def do_round(self, start_player_index):
         # Play and safe round
-        self.current_round = Round(self.players, start_player_index)
+        self.current_round = Round(self.players, start_player_index, self.cumulative_score)
         self.current_round.play_round()
         self.round_storage.append(self.current_round)
 
         # Calc winners and points
         schneider = False
         schwarz = False
-        tout = self.current_round.tout
+        tout = True if self.current_round.tout_player else False
         if not tout and (self.current_round.playing_team_score <= 30 or self.current_round.nonPlaying_team_score <= 30):
             schneider = True
         if not tout and (self.current_round.playing_team_score == 0 or self.current_round.nonPlaying_team_score == 0):
@@ -31,7 +31,7 @@ class Game:
         laufende = self.current_round.laufende
         klopfen = len(self.current_round.klopfen_players)
         kontra = True if self.current_round.kontra_player else False
-        re = self.current_round.re
+        re = True if self.current_round.re_player else False
 
         # Tarifs: Schneider/Laufende, Rufspiel, Solo
         tarif = [10, 20, 50]
@@ -92,9 +92,9 @@ class Game:
 
         # Sum scores
         for player, scores in self.scores.items():
-            self.final_score[player] = sum(scores)
+            self.cumulative_score[player] = sum(scores)
 
         # This way, the AI tries to Win games, not win as much money as possible over a ton of games (Maybe a difference?)
-        Winner = max(self.final_score, key=self.final_score.get)
+        Winner = max(self.cumulative_score, key=self.cumulative_score.get)
 
         return Winner

@@ -1,5 +1,6 @@
-from GameClass import Game
-from CardClass import Card
+from Game.GameClass import Game
+from Game.CardClass import Card
+from Game.PlayerClass import Player
 
 '''
 test_game = Game(2)
@@ -25,15 +26,15 @@ print(f"The winner of the trick is: {winner.name}")
 print(f'The winner won {trick}')
 '''
 
-test_game = Game(1)
+test_game = Game(2)
 
 test_game.play_game()
 
 print(test_game.current_round.game_type)
 print(test_game.current_round.play_caller)
 print(test_game.current_round.starting_hand)
-print(len(test_game.scores['Player 1']))
-print(test_game.final_score)
+print(test_game.scores)
+print(test_game.cumulative_score)
 print(test_game.current_round.tricks_per_player)
 print(test_game.current_round.round_scores)
 
