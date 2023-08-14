@@ -76,5 +76,4 @@ start_player = player2
 
 # Testing the function
 encoded_state = encode_players(players, start_player, round_scores, game_scores, kontra_players, re_player, tout_player, klopfen_players)
-print(encoded_state)
-
+# print(encoded_state)

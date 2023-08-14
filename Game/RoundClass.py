@@ -22,28 +22,12 @@ class Round:
         self.current_trick = []
         self.current_trick_number = 0
         self.current_player_index = start_player_index  # 0 --> Player 1, 1 --> Player 2, 2 --> Player 3 etc.
-        self.starting_player = players[start_player_index] # Always holds who plays/played the first card in a trick
+        self.starting_player = players[start_player_index]  # Always holds who plays/played the first card in a trick
         self.play_caller = None
         self.playing_players = []
         self.nonPlaying_players = []
         self.starting_hand = {player.name: [] for player in players}
         self.current_game_score = cumulative_score
-
-    def set_klopfen(self, player):
-        if player.klopfen():
-            self.klopfen_players.append(player)
-
-    def set_kontra(self, player):
-        if player.kontra():
-            self.kontra_player = player
-
-    def set_re(self, player):
-        if player.re():
-            self.re_player = player
-
-    def set_tout(self, player):
-        if player.tout():
-            self.tout_player = player
 
     def set_trumps(self, game_type):
 
@@ -92,7 +76,8 @@ class Round:
 
         for _ in range(4):
             player = self.players[self.current_player_index]
-            card = player.play_card(self.game_type, self.current_trick)  # Player decides which card to play
+            card = player.play_card(self.current_trick, self.tricks_per_player, self.players, self.starting_player, self.round_scores,
+                                    self.current_game_score, self.kontra_player, self.re_player, self.tout_player, self.klopfen_players, self.game_type)  # Player decides which card to play
             self.current_trick.append((player.name, card))
             self.current_player_index = (self.current_player_index + 1) % 4
 
@@ -124,7 +109,9 @@ class Round:
         # Klopfen and Deal
         for player in players_in_order:
             player.receive_cards(self.deck.deal4())
-            self.set_klopfen(player)
+            if player.klopfen(self.current_trick, self.tricks_per_player, self.players, self.starting_player, self.round_scores,
+                              self.current_game_score, self.kontra_player, self.re_player, self.tout_player, self.klopfen_players, self.game_type):
+                self.klopfen_players.append(player)
             player.receive_cards(self.deck.deal4())
 
         # Save starting hand
@@ -134,7 +121,8 @@ class Round:
         # Game type decision
         position = 1
         for player in players_in_order:
-            game_type = player.decide_game_type(position)
+            game_type = player.decide_game_type(self.current_trick, self.tricks_per_player, self.players, self.starting_player, self.round_scores,
+                                                self.current_game_score, self.kontra_player, self.re_player, self.tout_player, self.klopfen_players, self.game_type, position)
             position += 1
             if game_type != 'Passen':
                 self.game_type = game_type
@@ -142,7 +130,9 @@ class Round:
                 self.play_caller = player
                 # Tout
                 if self.game_type in ('Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz'):
-                    self.set_tout(self.play_caller)
+                    if player.tout(self.current_trick, self.tricks_per_player, self.players, self.starting_player, self.round_scores,
+                                   self.current_game_score, self.kontra_player, self.re_player, self.tout_player, self.klopfen_players, self.game_type):
+                        self.tout_player = player
                 break
 
         # Make teams
@@ -165,10 +155,14 @@ class Round:
         # Kontra and Re
         for player in self.nonPlaying_players:
             if not self.kontra_player:
-                self.set_kontra(player)
+                if player.kontra(self.current_trick, self.tricks_per_player, self.players, self.starting_player, self.round_scores,
+                                 self.current_game_score, self.kontra_player, self.re_player, self.tout_player, self.klopfen_players, self.game_type):
+                    self.kontra_player = player
 
         if self.kontra_player:
-            self.set_re(self.play_caller)
+            if self.play_caller.re(self.current_trick, self.tricks_per_player, self.players, self.starting_player, self.round_scores,
+                                   self.current_game_score, self.kontra_player, self.re_player, self.tout_player, self.klopfen_players, self.game_type):
+                self.re_player = player
 
         # Save laufende
         playing_players_cards = []

@@ -1,13 +1,12 @@
-from .PlayerClass import Player
 from .RoundClass import Round
 
 
 class Game:
 
-    def __init__(self, total_rounds):
+    def __init__(self, total_rounds, list_of_players):
         self.total_rounds = total_rounds
 
-        self.players = [Player(f"Player {i + 1}") for i in range(4)]
+        self.players = list_of_players
         self.scores = {player.name: [] for player in self.players}
         self.cumulative_score = {player.name: 0 for player in self.players}
         self.current_round = None
@@ -97,4 +96,4 @@ class Game:
         # This way, the AI tries to Win games, not win as much money as possible over a ton of games (Maybe a difference?)
         Winner = max(self.cumulative_score, key=self.cumulative_score.get)
 
-        return Winner
+        return Winner, self.cumulative_score

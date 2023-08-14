@@ -1,27 +1,35 @@
 [NEAT]
+# Defines that max fitness is best
 fitness_criterion     = max
-fitness_threshold     = 1
-pop_size              = 150
+# Number of genomes per pop
+pop_size              = 256
+# Resets stagnating species(group of similiar genomes)
 reset_on_extinction   = False
 
 [DefaultGenome]
-# Assuming a certain number for inputs and outputs; adjust as needed
-num_inputs            = 100
-num_outputs           = 10
+# Input/Output Neurons
+num_inputs            = 321
+num_outputs           = 22
+# How output Neurons are structured (sigmoid = prob. between 0 and 1)
 activation_default    = sigmoid
+# mutate_rate allows single neurons to mutate into other output structures defined by options
 activation_mutate_rate = 0.0
 activation_options    = sigmoid
 
-# ... add other necessary configurations ...
-
 [DefaultSpeciesSet]
+# How different must genomes be to be considered same species, higher value is fewer species
 compatibility_threshold = 3.0
 
 [DefaultStagnation]
+# Defines how fitness of species is determined (max = value of fittest member of species is used)
 species_fitness_func   = max
+# Number of generation a species is stagnant before being removed
 max_stagnation         = 20
+# Number of genomes to be spared of extinction via stagnation
 species_elitism        = 2
 
 [DefaultReproduction]
-elitism                = 2
+# Number of genomes directly copied into the next generation
+elitism                = 4
+# Share of genomes allowed to have offspring
 survival_threshold     = 0.2

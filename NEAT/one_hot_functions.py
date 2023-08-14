@@ -30,13 +30,14 @@ def encode_cards(player, current_trick, tricks_per_player):
 
     return encoding
 
+
 def encode_players(players, start_player, round_scores, game_scores, kontra_player, re_player, tout_player, klopfen_players):
 
     ## Warning ##
     # Scores are not one_hot encoded, since I'm not sure how and binary encoding changes the width
     # I hope its ok, since only scores are not one_hot and they are target values
     # If it performs badly, try only the game_score (score that should be maximized), the round_score is implicitly known anyway
-    
+
     def player_encoding(player):
         # Absolute Position
         absolute_position = [0, 0, 0, 0]
@@ -50,7 +51,7 @@ def encode_players(players, start_player, round_scores, game_scores, kontra_play
         relative_position[relative_idx] = 1
 
         # Number of cards in hand
-        cards_in_hand = [1] * len(player.hand) + [0] * (8 - len(player.hand))
+        cards_in_hand = [1] * player.count_cards_in_hand() + [0] * (8 - player.count_cards_in_hand)
 
         # Round score
         round_score = [round_scores[player.name]]
@@ -78,10 +79,14 @@ def encode_players(players, start_player, round_scores, game_scores, kontra_play
 def encode_game_type(game_type):
 
     game_types = ['Rufspiel-Eichel', 'Rufspiel-Blatt', 'Rufspiel-Herz', 'Rufspiel-Schelle',
-                    'Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz']
-    
+                  'Solo-Eichel', 'Solo-Blatt', 'Solo-Herz', 'Solo-Schelle', 'Wenz']
+
     encoding = [0] * len(game_types)
     if game_type in game_types:
         encoding[game_types.index(game_type)] = 1
-        
+
     return encoding
+
+
+def encode_game_state(player, current_trick, tricks_per_player, players, start_player, round_scores, game_scores, kontra_player, re_player, tout_player, klopfen_players, game_type):
+    return encode_cards(player, current_trick, tricks_per_player) + encode_players(players, start_player, round_scores, game_scores, kontra_player, re_player, tout_player, klopfen_players) + encode_game_type(game_type)
