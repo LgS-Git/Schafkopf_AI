@@ -1,41 +1,69 @@
-from Game.GameClass import Game
 from Game.CardClass import Card
-from Game.PlayerClass import Player
+from NEAT.one_hot_functions import encode_game_state, encode_cards, encode_players, encode_game_type
+import random
 
-'''
-test_game = Game(2)
+# Define a test
 
-test_game.play_round(0)
 
-test_game.current_round.set_game_type('Player 1', 'Wenz')
+class Player:
 
-print(test_game.current_round.trumps_in_order)
+    def __init__(self, name):
+        self.name = name
+        self.hand = []  # List of card objects, if Card is played, it is replaced by None
 
-trick_cards = [
-    Card("Eichel", "10"),
-    Card("Blatt", "Unter"),
-    Card("Herz", "10"),
-    Card("Eichel", "Ass")
-]
+    def receive_cards(self, cards):
+        self.hand.extend(cards)
 
-for card in trick_cards:
-    test_game.current_round.play_next_card(card)
+    def count_cards_in_hand(self):
+        return sum(1 for card in self.hand if card != None)
 
-winner, trick = test_game.current_round.determine_trick_winner()
-print(f"The winner of the trick is: {winner.name}")
-print(f'The winner won {trick}')
-'''
 
-test_game = Game(2)
+def test_encode_game_state():
 
-test_game.play_game()
+    # Create dummy data
+    cards = [Card(suit, rank) for suit in Card.SUITS for rank in Card.RANKS]
+    random.shuffle(cards)
 
-print(test_game.current_round.game_type)
-print(test_game.current_round.play_caller)
-print(test_game.current_round.starting_hand)
-print(test_game.scores)
-print(test_game.cumulative_score)
-print(test_game.current_round.tricks_per_player)
-print(test_game.current_round.round_scores)
+    players = [
+        Player("Player 1"),
+        Player("Player 2"),
+        Player("Player 3"),
+        Player("Player 4")
+    ]
 
-print('Breakpoint')
+    for i, player in enumerate(players):
+        player.receive_cards(cards[i*8:(i+1)*8])
+
+    current_trick = [("Player 1", cards[0]), ("Player 2", cards[1]), ("Player 3", cards[2]), ("Player 4", cards[3])]
+    tricks_per_player = {
+        "Player 1": [cards[4:6], cards[8:10]],
+        "Player 2": [cards[6:8]],
+        "Player 3": [],
+        "Player 4": [cards[10:12]]
+    }
+    start_player = players[0]
+    round_scores = {"Player 1": 10, "Player 2": 20, "Player 3": 30, "Player 4": 40}
+    game_scores = {"Player 1": 100, "Player 2": 200, "Player 3": 300, "Player 4": 400}
+    kontra_player = players[1]
+    re_player = players[2]
+    tout_player = players[3]
+    klopfen_players = [players[0], players[3]]
+    game_type = 'Rufspiel-Eichel'
+
+    # Test individual encoding functions
+    cards_encoded = encode_cards(players[0], current_trick, tricks_per_player)
+    print(f"encode_cards length: {len(cards_encoded)}")
+
+    players_encoded = encode_players(players, start_player, round_scores, game_scores, kontra_player, re_player, tout_player, klopfen_players)
+    print(f"encode_players length: {len(players_encoded)}")
+
+    game_type_encoded = encode_game_type(game_type)
+    print(f"encode_game_type length: {len(game_type_encoded)}")
+
+    # Test encode_game_state
+    encoded_state = encode_game_state(players[0], current_trick, tricks_per_player, players, start_player, round_scores,
+                                      game_scores, kontra_player, re_player, tout_player, klopfen_players, game_type)
+    assert len(encoded_state) == 321, f"Expected 321, but got {len(encoded_state)}"
+
+
+test_encode_game_state()

@@ -94,6 +94,7 @@ class Game:
             self.cumulative_score[player] = sum(scores)
 
         # This way, the AI tries to Win games, not win as much money as possible over a ton of games (Maybe a difference?)
-        Winner = max(self.cumulative_score, key=self.cumulative_score.get)
+        Winner_name = max(self.cumulative_score, key=self.cumulative_score.get)
+        Winner = next(player for player in self.players if player.name == Winner_name)
 
         return Winner, self.cumulative_score

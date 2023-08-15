@@ -19,7 +19,7 @@ class Round:
         self.nonPlaying_team_score = 0
         self.playing_team_score = 0
         self.tricks_per_player = {player.name: [] for player in players}
-        self.current_trick = []
+        self.current_trick = []  # Array of tuples [(player.name, card), (...)]
         self.current_trick_number = 0
         self.current_player_index = start_player_index  # 0 --> Player 1, 1 --> Player 2, 2 --> Player 3 etc.
         self.starting_player = players[start_player_index]  # Always holds who plays/played the first card in a trick
@@ -43,9 +43,6 @@ class Round:
             self.trumps_in_order = [Card(suit, 'Unter') for suit in Card.SUITS]
 
     def determine_trick_winner(self):
-        if len(self.current_trick) < 4:
-            print('Trick not finished, continue playing')
-            return
 
         leading_suit = self.current_trick[0][1].suit
         highest_card = self.current_trick[0][1]
@@ -77,7 +74,8 @@ class Round:
         for _ in range(4):
             player = self.players[self.current_player_index]
             card = player.play_card(self.current_trick, self.tricks_per_player, self.players, self.starting_player, self.round_scores,
-                                    self.current_game_score, self.kontra_player, self.re_player, self.tout_player, self.klopfen_players, self.game_type)  # Player decides which card to play
+                                    self.current_game_score, self.kontra_player, self.re_player, self.tout_player, self.klopfen_players,
+                                    self.game_type, self.trumps_in_order)  # Player decides which card to play
             self.current_trick.append((player.name, card))
             self.current_player_index = (self.current_player_index + 1) % 4
 
@@ -95,7 +93,10 @@ class Round:
         # Reset the current trick and player index
         self.current_trick = []
 
-        self.current_player_index = int(winning_player[-1]) - 1
+        for i, player in enumerate(self.players):
+            if player.name == winning_player:
+                self.current_player_index = i
+                break
         self.starting_player = self.players[self.current_player_index]
 
     def play_round(self):
